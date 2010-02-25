@@ -17,7 +17,7 @@ from django.test import utils
 
 import nose.core
 
-from django_nose.plugin import ResultPlugin
+from django_nose.plugin import ResultPlugin, DjangoPlugin
 
 try:
     any
@@ -65,8 +65,10 @@ def run_tests(test_labels, verbosity=1, interactive=True, spatial_db=False):
 
     try:
         result_plugin = ResultPlugin()
+        django_plugin = DjangoPlugin()
         test_program = nose.core.TestProgram(argv=nose_argv, exit=False,
-                                             addplugins=[result_plugin])
+                                             addplugins=[result_plugin,
+                                                         django_plugin])
         result = result_plugin.result
         return len(result.failures) + len(result.errors)
     finally:
