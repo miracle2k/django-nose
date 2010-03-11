@@ -79,7 +79,7 @@ class NoseTestSuiteRunner(DjangoTestSuiteRunner):
         result = self.run_suite(nose_argv)
         self.teardown_databases(old_names)
         self.teardown_test_environment()
-        return self.suite_result(result)
+        return self.suite_result('dummy suite argument', result)
 
 
 def _get_options():
