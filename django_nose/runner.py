@@ -16,7 +16,7 @@ from django.test.simple import DjangoTestSuiteRunner
 
 import nose.core
 
-from django_nose.plugin import ResultPlugin
+from django_nose.plugin import ResultPlugin, DjangoPlugin
 
 try:
     any
@@ -36,8 +36,9 @@ class NoseTestSuiteRunner(DjangoTestSuiteRunner):
 
     def run_suite(self, nose_argv):
         result_plugin = ResultPlugin()
+        django_plugin = DjangoPlugin()
         nose.core.TestProgram(argv=nose_argv, exit=False,
-                              addplugins=[result_plugin])
+                              addplugins=[result_plugin, django_plugin])
         return result_plugin.result
 
     def run_tests(self, test_labels, extra_tests=None):
