@@ -1,40 +1,33 @@
-from optparse import make_option
-import sys
-
+"""
+Add extra options from the test runner to the ``test`` command, so that you can
+browse all the nose options from the command line.
+"""
 from django.conf import settings
-from django.core import management
-from django.core.management.base import BaseCommand
 from django.test.utils import get_runner
 
 
-test_runner = get_runner(settings)
+if 'south' in settings.INSTALLED_APPS:
+    from south.management.commands.test import Command
+else:
+    from django.core.management.commands.test import Command
 
-if hasattr(test_runner, 'options'):
-    extra_options = test_runner.options
+
+# Django < 1.2 compatibility
+test_runner = settings.TEST_RUNNER
+if test_runner.endswith('run_tests') or test_runner.endswith('run_gis_tests'):
+    import warnings
+    warnings.warn(
+        'Use `django_nose.NoseTestSuiteRunner` instead of `%s`' % test_runner,
+        DeprecationWarning)
+
+
+TestRunner = get_runner(settings)
+
+if hasattr(TestRunner, 'options'):
+    extra_options = TestRunner.options
 else:
     extra_options = []
 
 
-class Command(BaseCommand):
-    option_list = BaseCommand.option_list + (
-        make_option('--noinput', action='store_false', dest='interactive', default=True,
-            help='Tells Django to NOT prompt the user for input of any kind.'),
-    ) + tuple(extra_options)
-    help = 'Runs the test suite for the specified applications, or the entire site if no apps are specified.'
-    args = '[appname ...]'
-
-    requires_model_validation = False
-
-    def handle(self, *test_labels, **options):
-
-        verbosity = int(options.get('verbosity', 1))
-        interactive = options.get('interactive', True)
-
-        if 'south' in settings.INSTALLED_APPS:
-            # South has its own test command that turns off migrations
-            # during testings.  If we detected south, we need to fix syncdb.
-            management._commands['syncdb'] = 'django.core'
-
-        failures = test_runner(test_labels, verbosity=verbosity, interactive=interactive)
-        if failures:
-            sys.exit(failures)
+class Command(Command):
+    option_list = Command.option_list + tuple(extra_options)

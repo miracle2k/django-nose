@@ -26,7 +26,12 @@ class ResultPlugin(object):
 
 
 class DjangoPlugin(object):
-    """Replicates the functionality of Django's ``TestCase`` class.
+    """Configures Django to setup and tear down the environment.
+
+    This allows coverage to report on all code imported and used during the
+    initialisation of the test runner.
+
+    Also, it replicates the functionality of Django's ``TestCase`` class:
 
     Ensures that after each test:
 
@@ -45,6 +50,20 @@ class DjangoPlugin(object):
 
     enabled = True
     name = "django"
+
+    def __init__(self, runner):
+        super(DjangoPlugin, self).__init__()
+        self.runner = runner
+
+    def begin(self):
+        """Setup the environment"""
+        self.runner.setup_test_environment()
+        self.old_names = self.runner.setup_databases()
+
+    def finalize(self, result):
+        """Destroy the environment"""
+        self.runner.teardown_databases(self.old_names)
+        self.runner.teardown_test_environment()
 
     def _has_transaction_support(self, test):
         transaction_support = True
