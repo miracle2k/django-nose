@@ -4,6 +4,7 @@ from django.db import connection, transaction
 from django.core import mail
 from django.test.testcases import (
     disable_transaction_methods, restore_transaction_methods)
+from django.test import TestCase as DjangoTestCase
 
 
 __all__ = ('ResultPlugin', 'DjangoSetUpPlugin', 'DjangoTestPlugin',)
@@ -71,6 +72,9 @@ class DjangoTestPlugin(object):
     enabled = True
     name = "django testcase"
 
+    def _apply(self, test):
+        return not isinstance(test, DjangoTestCase)
+
     def _has_transaction_support(self, test):
         transaction_support = True
         if hasattr(test.context, 'use_transaction'):
@@ -84,6 +88,9 @@ class DjangoTestPlugin(object):
         return transaction_support
 
     def beforeTest(self, test):
+        if not self._apply(test):
+            return
+
         mail.outbox = []
 
         # Before each test, disable transaction support.
@@ -94,6 +101,9 @@ class DjangoTestPlugin(object):
             disable_transaction_methods()
 
     def afterTest(self, test):
+        if not self._apply(test):
+            return
+
         # After each test, restore transaction support, and rollback
         # the current test's transaction. If transactions are not
         # available, truncate all tables.
