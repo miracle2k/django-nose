@@ -16,7 +16,8 @@ from django.test.simple import DjangoTestSuiteRunner
 
 import nose.core
 
-from django_nose.plugin import DjangoPlugin, ResultPlugin
+from django_nose.plugin import (
+    DjangoSetUpPlugin, DjangoTestPlugin, ResultPlugin)
 
 try:
     any
@@ -35,11 +36,13 @@ OPTION_TRANSLATION = {'--failfast': '-x'}
 class NoseTestSuiteRunner(DjangoTestSuiteRunner):
 
     def run_suite(self, nose_argv):
-        django_plugin = DjangoPlugin(self)
-
+        django_setup_plugin = DjangoSetUpPlugin(self)
+        django_test_plugin = DjangoTestPlugin()
         result_plugin = ResultPlugin()
         nose.core.TestProgram(argv=nose_argv, exit=False,
-                              addplugins=[django_plugin, result_plugin])
+                              addplugins=[django_setup_plugin,
+                                          django_test_plugin,
+                                          result_plugin])
         return result_plugin.result
 
     def run_tests(self, test_labels, extra_tests=None):

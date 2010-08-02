@@ -6,7 +6,7 @@ from django.test.testcases import (
     disable_transaction_methods, restore_transaction_methods)
 
 
-__all__ = ('ResultPlugin', 'DjangoPlugin',)
+__all__ = ('ResultPlugin', 'DjangoSetUpPlugin', 'DjangoTestPlugin',)
 
 
 class ResultPlugin(object):
@@ -25,13 +25,33 @@ class ResultPlugin(object):
         self.result = result
 
 
-class DjangoPlugin(object):
-    """Configures Django to setup and tear down the environment.
-
+class DjangoSetUpPlugin(object):
+    """
+    Configures Django to setup and tear down the environment.
     This allows coverage to report on all code imported and used during the
     initialisation of the test runner.
+    """
 
-    Also, it replicates the functionality of Django's ``TestCase`` class:
+    name = "django setup"
+    enabled = True
+
+    def __init__(self, runner):
+        super(DjangoSetUpPlugin, self).__init__()
+        self.runner = runner
+
+    def begin(self):
+        """Setup the environment"""
+        self.runner.setup_test_environment()
+        self.old_names = self.runner.setup_databases()
+
+    def finalize(self, result):
+        """Destroy the environment"""
+        self.runner.teardown_databases(self.old_names)
+        self.runner.teardown_test_environment()
+
+
+class DjangoTestPlugin(object):
+    """This replicates the functionality of Django's ``TestCase`` class:
 
     Ensures that after each test:
 
@@ -49,21 +69,7 @@ class DjangoPlugin(object):
     """
 
     enabled = True
-    name = "django"
-
-    def __init__(self, runner):
-        super(DjangoPlugin, self).__init__()
-        self.runner = runner
-
-    def begin(self):
-        """Setup the environment"""
-        self.runner.setup_test_environment()
-        self.old_names = self.runner.setup_databases()
-
-    def finalize(self, result):
-        """Destroy the environment"""
-        self.runner.teardown_databases(self.old_names)
-        self.runner.teardown_test_environment()
+    name = "django testcase"
 
     def _has_transaction_support(self, test):
         transaction_support = True
